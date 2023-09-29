@@ -32,8 +32,10 @@ if __name__=="__main__":
                         \n curie = GPT-3 Curie \
                         \n babbage = GPT-3 Babbage \
                         \n ada = GPT-3 Ada \
+                        \n dia_GPT-3.5 = dia_GPT-3.5\
                         ')
-    
+
+    parser.add_argument('--dialogue_members', type=int, default=1, help='Number of members in dialogue. Set to 1 for normal')
     parser.add_argument('--run_till_completion', type=str, default="False", help='Run till completion')
     parser.add_argument('--verbose', type=str, default="False", help='Verbose')
     parser.add_argument('--ignore_existing', action='store_true', help='Ignore existing output')
@@ -44,6 +46,7 @@ if __name__=="__main__":
     task = args.task
     config = args.config
     engine = args.engine
+    dialogue_members = args.dialogue_members
     verbose = eval(args.verbose)
     specified_instances = args.specific_instances
     seed=args.seed
@@ -78,7 +81,7 @@ if __name__=="__main__":
         prompt_generator.task_8_3_partial_to_full(specified_instances)
     
     # ========================= Response Generation =========================
-    response_generator = ResponseGenerator(config_file, engine, verbose, ignore_existing)
+    response_generator = ResponseGenerator(config_file, engine, verbose, ignore_existing, dialogue_members)
     task_dict = {
         't1': 'task_1_plan_generation',
         't2': 'task_2_plan_optimality',
@@ -95,7 +98,7 @@ if __name__=="__main__":
         task_name = task_dict[task]
     except:
         raise ValueError("Invalid task name")
-    response_generator.get_responses(task_name, run_till_completion=run_till_completion)
+    response_generator.get_responses(task_name, specified_instances, run_till_completion=run_till_completion)
 
     # ========================= Response Evaluation =========================
     response_evaluator = ResponseEvaluator(config_file, engine, specified_instances, verbose, ignore_existing)

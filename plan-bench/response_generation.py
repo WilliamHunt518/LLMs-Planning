@@ -15,12 +15,13 @@ import copy
 import time
 from tqdm import tqdm
 class ResponseGenerator:
-    def __init__(self, config_file, engine, verbose, ignore_existing):
+    def __init__(self, config_file, engine, verbose, ignore_existing, dialogue_members=1):
         self.engine = engine
         self.verbose = verbose
         self.ignore_existing = ignore_existing
         self.max_gpt_response_length = 500
         self.data = self.read_config(config_file)
+        self.dialogue_members = dialogue_members
         if self.engine == 'bloom':
             self.model = self.get_bloom()
         elif 'finetuned' in self.engine:
@@ -44,7 +45,7 @@ class ResponseGenerator:
                                                      max_memory=max_memory_mapping)
         return {'model': model, 'tokenizer': tokenizer}
 
-    def get_responses(self, task_name, specified_instances = [], run_till_completion=False):
+    def get_responses(self, task_name, specified_instances=[], run_till_completion=False):
         output_dir = f"responses/{self.data['domain_name']}/{self.engine}/"
         os.makedirs(output_dir, exist_ok=True)
         output_json = output_dir+f"{task_name}.json"
@@ -72,22 +73,25 @@ class ResponseGenerator:
                     else:
                         specified_instances.remove(instance['instance_id'])                   
                 
-                if self.verbose:
-                    print(f"Sending query to LLM: Instance {instance['instance_id']}")
-                query = instance["query"]
-                stop_statement = "[STATEMENT]"
-                if 'caesar' in self.data['domain_name']:
-                    stop_statement = caesar_encode(stop_statement)
-                llm_response = send_query(query, self.engine, self.max_gpt_response_length, model=self.model, stop=stop_statement)
-                if not llm_response:
-                    failed_instances.append(instance['instance_id'])
-                    print(f"Failed instance: {instance['instance_id']}")
-                    continue
-                if self.verbose:
-                    print(f"LLM response: {llm_response}")
-                instance["llm_raw_response"] = llm_response
-                with open(output_json, 'w') as file:
-                    json.dump(structured_output, file, indent=4)
+                    if self.verbose:
+                        print(f"Sending query to LLM: Instance {instance['instance_id']}")
+                    query = instance["query"]
+                    stop_statement = "[STATEMENT]"
+                    if 'caesar' in self.data['domain_name']:
+                        stop_statement = caesar_encode(stop_statement)
+                    if self.dialogue_members > 1:
+                        llm_response = send_dialogue_query(query, self.engine, self.max_gpt_response_length, self.dialogue_members, model=self.model, stop=stop_statement)
+                    else:
+                        llm_response = send_query(query, self.engine, self.max_gpt_response_length, model=self.model, stop=stop_statement)
+                    if not llm_response:
+                        failed_instances.append(instance['instance_id'])
+                        print(f"Failed instance: {instance['instance_id']}")
+                        continue
+                    if self.verbose:
+                        print(f"LLM response: {llm_response}")
+                    instance["llm_raw_response"] = llm_response
+                    with open(output_json, 'w') as file:
+                        json.dump(structured_output, file, indent=4)
             
             if run_till_completion:
                 if len(failed_instances) == 0:

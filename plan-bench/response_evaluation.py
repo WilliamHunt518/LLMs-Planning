@@ -83,12 +83,13 @@ class ResponseEvaluator:
                     if self.verbose:
                         print(f"Instance {instance_dict['instance_id']} response not generated")
                     continue
+                """
                 if len(self.specified_instances) > 0:
                     if instance_dict['instance_id'] not in specified_instances:
                         continue
                     else:
                         specified_instances.remove(instance_dict['instance_id'])      
-                
+                """
                 if self.verbose:
                     print(f"Evaluting instance {instance_dict['instance_id']}")
                 llm_response = instance_dict["llm_raw_response"]
