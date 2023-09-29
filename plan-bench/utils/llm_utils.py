@@ -1,7 +1,7 @@
 from transformers import StoppingCriteriaList, StoppingCriteria
 import openai
 import os
-openai.api_key = "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"#os.environ["OPENAI_API_KEY"]
+openai.api_key = os.environ["OPENAI_API_KEY"]
 def generate_from_bloom(model, tokenizer, query, max_tokens):
     encoded_input = tokenizer(query, return_tensors='pt')
     stop = tokenizer("[PLAN END]", return_tensors='pt')
