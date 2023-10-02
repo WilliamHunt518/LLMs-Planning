@@ -6,7 +6,8 @@ import hashlib
 from tarski.io import PDDLReader
 from tarski.syntax.formulas import *
 
-openai.api_key = os.environ["OPENAI_API_KEY"]
+openai.api_key = "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"#os.environ["OPENAI_API_KEY"]
+
 random.seed(10)
 
 from .llm_utils import *
@@ -254,19 +255,12 @@ def treat_on(letters_dict, atom):
 
 def validate_plan(domain, instance, plan_file):
     # TODO make this work
-    val_path = "C:/temp/VAL" #os.environ["VAL"]
-    print(val_path)
-    domain = domain.replace("\\", "/")
+    val_path = "~/Documents/Feasibility/Bench/GIT_LOCAL_ROOT/LLMs-Planning/planner_tools/VAL"#os.environ["VAL"]
     cmd = f"{val_path}/validate {domain} {instance} {plan_file}"
-    print(cmd)
     response = os.popen(cmd).read()
     if 'Problem in domain' in response:
         raise Exception('Problem in domain: Check PDDL Writer')
     return True if "Plan valid" in response else False
-
-
-
-
 
 
 

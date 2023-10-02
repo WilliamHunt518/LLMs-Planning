@@ -1,5 +1,7 @@
+import multiprocessing
 import os
 import random
+import timeit
 
 import yaml
 from Executor import Executor
@@ -14,6 +16,7 @@ np.random.seed(42)
 import copy
 import time
 from tqdm import tqdm
+
 class ResponseGenerator:
     def __init__(self, config_file, engine, verbose, ignore_existing, dialogue_members=1):
         self.engine = engine
@@ -80,8 +83,50 @@ class ResponseGenerator:
                     if 'caesar' in self.data['domain_name']:
                         stop_statement = caesar_encode(stop_statement)
                     if self.dialogue_members > 1:
-                        llm_response = send_dialogue_query(query, self.engine, self.max_gpt_response_length, self.dialogue_members, model=self.model, stop=stop_statement)
+                        attempts = 0
+                        tic = timeit.default_timer()
+                        while attempts < 3:
+                            manager = multiprocessing.Manager()
+                            return_dict = manager.dict()
+                            # Start bar as a process
+                            p = multiprocessing.Process(target=safe_dialogue_query, args=(query, self.engine, self.max_gpt_response_length, self.dialogue_members, self.model, stop_statement, return_dict))
+                            p.start()
+
+                            # Wait for 10 seconds or until process finishes
+                            p.join(90)
+
+                            # If thread is still active
+                            if p.is_alive():
+                                # Terminate - may not work if process is stuck for good
+                                p.terminate()
+                                # OR Kill - will work for sure, no chance for process to finish nicely however
+                                # p.kill()
+
+                                p.join()
+
+                                llm_response = None
+                                attempts = attempts + 1
+                                if attempts < 3:
+                                    print("TIMEOUT, RETRYING")
+                                else:
+                                    print("TIMEOUT, GIVING UP")
+                            else:
+                                print(return_dict.values())
+                                if len(return_dict.values()) > 0:
+                                    llm_response = return_dict.values()[0]
+                                else:
+                                    llm_response = None
+                                break
+
+                        # Stop the stopwatch / counter
+                        toc = timeit.default_timer()
+                        elapsed = toc - tic
+                        print("--------------------------Finished after: " + str(elapsed) + " seconds")
+
+                        #llm_response = safe_dialogue_query(query, self.engine, self.max_gpt_response_length, self.dialogue_members, model=self.model, stop=stop_statement)
+                        #llm_response = send_dialogue_query(query, self.engine, self.max_gpt_response_length, self.dialogue_members, model=self.model, stop=stop_statement)
                     else:
+                        print(query)
                         llm_response = send_query(query, self.engine, self.max_gpt_response_length, model=self.model, stop=stop_statement)
                     if not llm_response:
                         failed_instances.append(instance['instance_id'])

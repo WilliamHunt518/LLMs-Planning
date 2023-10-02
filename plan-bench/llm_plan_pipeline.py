@@ -32,7 +32,6 @@ if __name__=="__main__":
                         \n curie = GPT-3 Curie \
                         \n babbage = GPT-3 Babbage \
                         \n ada = GPT-3 Ada \
-                        \n dia_GPT-3.5 = dia_GPT-3.5\
                         ')
 
     parser.add_argument('--dialogue_members', type=int, default=1, help='Number of members in dialogue. Set to 1 for normal')
@@ -48,7 +47,7 @@ if __name__=="__main__":
     engine = args.engine
     dialogue_members = args.dialogue_members
     verbose = eval(args.verbose)
-    specified_instances = args.specific_instances
+    specified_instances = list(range(2,12))# list(range(2,52))  #args.specific_instances
     seed=args.seed
     ignore_existing = args.ignore_existing
     random_example = eval(args.random_example)

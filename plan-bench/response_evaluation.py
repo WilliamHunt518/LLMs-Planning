@@ -72,6 +72,7 @@ class ResponseEvaluator:
             json.dump(structured_output, file, indent=4)
 
     def evaluate_plan(self, task_name):
+        print()
         structured_output = self.load_json(task_name)
         total_correct = 0
         total_instances = 0
@@ -93,6 +94,10 @@ class ResponseEvaluator:
                 if self.verbose:
                     print(f"Evaluting instance {instance_dict['instance_id']}")
                 llm_response = instance_dict["llm_raw_response"]
+                try:
+                    print("    " + llm_response)
+                except:
+                    pass
                 id = instance_dict["instance_id"]
                 cur_instance = self.instance.format(id)
                 problem = self.get_problem(cur_instance, self.domain_pddl)
